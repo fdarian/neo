@@ -1,18 +1,11 @@
-import { Command } from "@effect/cli";
-import { Effect } from "effect";
+import { Command as CliCommand } from "@effect/cli";
+import { Command } from "@effect/platform";
 
-export const neoCmd = Command.make("neo", {}, () =>
-	Effect.sync(() => {
-		const result = Bun.spawnSync(
-			["container", "exec", "-it", "-u", "neo", "one", "zsh"],
-			{
-				stdio: ["inherit", "inherit", "inherit"],
-			},
-		);
-		if (result.exitCode !== 0) {
-			throw new Error(
-				`Command failed with exit code ${result.exitCode}`,
-			);
-		}
-	}),
+export const neoCmd = CliCommand.make("neo", {}, () =>
+	Command.make("container", "exec", "-it", "-u", "neo", "one", "zsh").pipe(
+		Command.stdin("inherit"),
+		Command.stdout("inherit"),
+		Command.stderr("inherit"),
+		Command.exitCode,
+	),
 );
