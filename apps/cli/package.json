@@ -1,0 +1,23 @@
+{
+	"name": "@neo/cli",
+	"version": "0.0.0",
+	"type": "module",
+	"bin": {
+		"neo": "./bin.mjs"
+	},
+	"imports": {
+		"#src/*": "./src/*"
+	},
+	"scripts": {
+		"check:tsc": "tsgo --noEmit"
+	},
+	"devDependencies": {
+		"@effect/cli": "^0.73.1",
+		"@effect/platform": "^0.94.2",
+		"@effect/platform-bun": "^0.87.1",
+		"@types/bun": "latest",
+		"@typescript/native-preview": "^7.0.0-dev.20260130.1",
+		"effect": "^3.19.15",
+		"typescript": "latest"
+	}
+}
