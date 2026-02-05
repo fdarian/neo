@@ -10,9 +10,20 @@ export const neoCmd = CliCommand.make("neo", {}, () =>
 		const configDir = yield* getConfigDir;
 		const match = resolveContainer(cwd, configDir);
 
-		const command = Option.match(match, {
+		const containerName = Option.match(match, {
+			onNone: () => "one",
+			onSome: (m) => m.containerName,
+		});
+
+		yield* Command.make("container", "start", containerName).pipe(
+			Command.stdout("inherit"),
+			Command.stderr("inherit"),
+			Command.exitCode,
+		);
+
+		const execCommand = Option.match(match, {
 			onNone: () =>
-				Command.make("container", "exec", "-it", "-u", "neo", "one", "zsh"),
+				Command.make("container", "exec", "-it", "-u", "neo", containerName, "zsh"),
 			onSome: (m) => {
 				const cdPath = `${mountedVolumeDir}/${m.subpath}`;
 				return Command.make(
@@ -29,7 +40,7 @@ export const neoCmd = CliCommand.make("neo", {}, () =>
 			},
 		});
 
-		return yield* command.pipe(
+		return yield* execCommand.pipe(
 			Command.stdin("inherit"),
 			Command.stdout("inherit"),
 			Command.stderr("inherit"),
