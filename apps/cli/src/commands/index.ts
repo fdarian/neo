@@ -3,8 +3,9 @@ import { Command } from "@effect/platform";
 import { Effect, Option } from "effect";
 import { getConfigDir, mountedVolumeDir } from "#src/config.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
+import { dnsCmd } from "#src/commands/dns-doctor.ts";
 
-export const neoCmd = CliCommand.make("neo", {}, () =>
+const rootCmd = CliCommand.make("neo", {}, () =>
 	Effect.gen(function* () {
 		const cwd = process.cwd();
 		const configDir = yield* getConfigDir;
@@ -47,4 +48,8 @@ export const neoCmd = CliCommand.make("neo", {}, () =>
 			Command.exitCode,
 		);
 	}),
+);
+
+export const neoCmd = rootCmd.pipe(
+	CliCommand.withSubcommands([dnsCmd]),
 );
