@@ -4,6 +4,7 @@ import { Effect, Option } from "effect";
 import { getConfigDir, mountedVolumeDir } from "#src/config.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 import { lsCmd } from "#src/commands/ls.ts";
+import { createCmd } from "#src/commands/create.ts";
 
 const rootCmd = CliCommand.make("neo", {}, () =>
 	Effect.gen(function* () {
@@ -51,5 +52,5 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 );
 
 export const neoCmd = rootCmd.pipe(
-	CliCommand.withSubcommands([lsCmd]),
+	CliCommand.withSubcommands([lsCmd, createCmd]),
 );
