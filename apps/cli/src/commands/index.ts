@@ -9,7 +9,8 @@ import { createCmd } from "#src/commands/create.ts";
 import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
-import { HostConfig, mountedVolumeDir } from "#src/config.ts";
+import { writeClipboardShims } from "#src/clipboard/shims.ts";
+import { HostConfig, HostSharedConfig, childNeoDir, mountedVolumeDir } from "#src/config.ts";
 import { HostLayers } from "#src/host.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
@@ -32,7 +33,12 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			Command.exitCode,
 		);
 
-		const setupEval = 'eval "$(neo child setup)"';
+		yield* writeClipboardShims.pipe(
+			Effect.provide(HostSharedConfig(containerName)),
+		);
+
+		const containerBinDir = `${childNeoDir(mountedVolumeDir)}/bin`;
+		const envSetup = `export PATH="${containerBinDir}:$PATH" && export DISPLAY=:0`;
 
 		const execCommand = Option.match(match, {
 			onNone: () =>
@@ -45,7 +51,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 					containerName,
 					"zsh",
 					"-c",
-					`${setupEval} && exec zsh`,
+					`${envSetup} && exec zsh`,
 				),
 			onSome: (m) => {
 				const cdPath = `${mountedVolumeDir}/${m.subpath}`;
@@ -58,7 +64,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 					m.containerName,
 					"zsh",
 					"-c",
-					`${setupEval} && cd '${cdPath}' && exec zsh`,
+					`${envSetup} && cd '${cdPath}' && exec zsh`,
 				);
 			},
 		});
