@@ -32,6 +32,8 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			Command.exitCode,
 		);
 
+		const setupEval = 'eval "$(neo child setup)"';
+
 		const execCommand = Option.match(match, {
 			onNone: () =>
 				Command.make(
@@ -42,6 +44,8 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 					"neo",
 					containerName,
 					"zsh",
+					"-c",
+					`${setupEval} && exec zsh`,
 				),
 			onSome: (m) => {
 				const cdPath = `${mountedVolumeDir}/${m.subpath}`;
@@ -54,7 +58,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 					m.containerName,
 					"zsh",
 					"-c",
-					`cd '${cdPath}' && exec zsh`,
+					`${setupEval} && cd '${cdPath}' && exec zsh`,
 				);
 			},
 		});
