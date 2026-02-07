@@ -9,6 +9,7 @@ import { HostLayers } from "#src/host.ts";
 const daemonCmd = CliCommand.make("daemon", {}, () =>
 	Effect.gen(function* () {
 		const port = yield* Effect.tryPromise(() => getPort());
+
 		yield* HttpServer.serveEffect(Daemon.server).pipe(
 			Effect.provide(
 				BunHttpServer.layer({ port: port, hostname: "0.0.0.0" }).pipe(
@@ -16,9 +17,9 @@ const daemonCmd = CliCommand.make("daemon", {}, () =>
 				),
 			),
 		);
+		yield* Effect.addFinalizer(() => Effect.logInfo("Shutting down server"));
 
 		yield* Daemon.Config.write({ pid: process.pid, port });
-
 		yield* Effect.never;
 	}).pipe(Effect.provide(HostLayers), Effect.scoped),
 ).pipe(CliCommand.withDescription("Run clipboard bridge daemon"));
