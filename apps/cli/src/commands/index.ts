@@ -10,6 +10,7 @@ import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
 import { HostConfig, HostSharedConfig, mountedVolumeDir } from "#src/config.ts";
+import { HostLayers } from "#src/host.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
 const rootCmd = CliCommand.make("neo", {}, () =>
@@ -67,7 +68,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			Command.stderr("inherit"),
 			Command.exitCode,
 		);
-	}),
+	}).pipe(Effect.provide(HostLayers)),
 );
 
 export const neoCmd = rootCmd.pipe(

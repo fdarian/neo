@@ -4,6 +4,7 @@ import { BunHttpServer } from "@effect/platform-bun";
 import { Effect } from "effect";
 import getPort from "get-port";
 import * as Daemon from "#src/clipboard/daemon.ts";
+import { HostLayers } from "#src/host.ts";
 
 const daemonCmd = CliCommand.make("daemon", {}, () =>
 	Effect.gen(function* () {
@@ -19,7 +20,7 @@ const daemonCmd = CliCommand.make("daemon", {}, () =>
 		yield* Daemon.Config.write({ pid: process.pid, port });
 
 		yield* Effect.never;
-	}).pipe(Effect.scoped),
+	}).pipe(Effect.provide(HostLayers), Effect.scoped),
 ).pipe(CliCommand.withDescription("Run clipboard bridge daemon"));
 
 export const clipboardCmd = CliCommand.make(
