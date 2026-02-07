@@ -13,10 +13,10 @@ const setupCmd = CliCommand.make("setup", {}, () =>
 
 const clipboardDaemonPort = CliCommand.make("clipboardDaemonPort", {}, () =>
 	Effect.gen(function* () {
-		const binDir = yield* Daemon.SharedPort.read.pipe(
+		const port = yield* Daemon.SharedPort.read.pipe(
 			Effect.provide(ChildSharedConfig),
 		);
-		return binDir;
+		yield* Console.log(port);
 	}),
 ).pipe(CliCommand.withDescription("Set up container environment"));
 
