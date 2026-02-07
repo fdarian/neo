@@ -15,7 +15,12 @@ export const removeCmd = CliCommand.make("remove", { name: nameArg }, (args) =>
 		);
 
 		const name = Option.orElse(nameFromArgs, () => nameFromCwd).pipe(
-			Option.getOrThrowWith(() => new Error("No container name provided and not inside a container directory")),
+			Option.getOrThrowWith(
+				() =>
+					new Error(
+						"No container name provided and not inside a container directory",
+					),
+			),
 		);
 
 		yield* Command.make("container", "stop", name).pipe(

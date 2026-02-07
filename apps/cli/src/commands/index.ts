@@ -1,12 +1,12 @@
 import { Command as CliCommand } from "@effect/cli";
 import { Command } from "@effect/platform";
 import { Effect, Option } from "effect";
+import { createCmd } from "#src/commands/create.ts";
+import { dnsCmd } from "#src/commands/dns-doctor.ts";
+import { lsCmd } from "#src/commands/ls.ts";
+import { removeCmd } from "#src/commands/remove.ts";
 import { getConfigDir, mountedVolumeDir } from "#src/config.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
-import { lsCmd } from "#src/commands/ls.ts";
-import { createCmd } from "#src/commands/create.ts";
-import { removeCmd } from "#src/commands/remove.ts";
-import { dnsCmd } from "#src/commands/dns-doctor.ts";
 
 const rootCmd = CliCommand.make("neo", {}, () =>
 	Effect.gen(function* () {
@@ -27,7 +27,15 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 
 		const execCommand = Option.match(match, {
 			onNone: () =>
-				Command.make("container", "exec", "-it", "-u", "neo", containerName, "zsh"),
+				Command.make(
+					"container",
+					"exec",
+					"-it",
+					"-u",
+					"neo",
+					containerName,
+					"zsh",
+				),
 			onSome: (m) => {
 				const cdPath = `${mountedVolumeDir}/${m.subpath}`;
 				return Command.make(

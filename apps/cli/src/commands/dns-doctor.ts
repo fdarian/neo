@@ -7,9 +7,12 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 		let changed = false;
 
 		yield* Console.log("[dns] Checking DNS resolver...");
-		const dnsLsOutput = yield* Command.make("container", "system", "dns", "ls").pipe(
-			Command.string,
-		);
+		const dnsLsOutput = yield* Command.make(
+			"container",
+			"system",
+			"dns",
+			"ls",
+		).pipe(Command.string);
 
 		if (!dnsLsOutput.includes("neo")) {
 			yield* Command.make("container", "system", "dns", "create", "neo").pipe(
@@ -24,12 +27,23 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 		}
 
 		yield* Console.log("[dns] Checking dns.domain property...");
-		const domainOutput = yield* Command.make("container", "system", "property", "get", "dns.domain").pipe(
-			Command.string,
-		);
+		const domainOutput = yield* Command.make(
+			"container",
+			"system",
+			"property",
+			"get",
+			"dns.domain",
+		).pipe(Command.string);
 
 		if (domainOutput.trim() !== "neo") {
-			yield* Command.make("container", "system", "property", "set", "dns.domain", "neo").pipe(
+			yield* Command.make(
+				"container",
+				"system",
+				"property",
+				"set",
+				"dns.domain",
+				"neo",
+			).pipe(
 				Command.stdout("inherit"),
 				Command.stderr("inherit"),
 				Command.exitCode,
@@ -41,34 +55,54 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 		}
 
 		yield* Console.log("[dns] Checking container DNS records...");
-		const containerListOutput = yield* Command.make("container", "list", "--format", "json").pipe(
-			Command.string,
-		);
+		const containerListOutput = yield* Command.make(
+			"container",
+			"list",
+			"--format",
+			"json",
+		).pipe(Command.string);
 		const containers = JSON.parse(containerListOutput);
 
-		const runningContainers = containers.filter((container: any) => container.status === "running");
+		const runningContainers = containers.filter(
+			(container: any) => container.status === "running",
+		);
 
 		const missingDns: Array<string> = [];
 		yield* Effect.forEach(runningContainers, (container: any) =>
-			Command.make("dig", "@127.0.0.1", "-p", "2053", `${container.name}.neo`, "+short").pipe(
+			Command.make(
+				"dig",
+				"@127.0.0.1",
+				"-p",
+				"2053",
+				`${container.name}.neo`,
+				"+short",
+			).pipe(
 				Command.string,
 				Effect.flatMap((digOutput) => {
 					if (digOutput.trim() === "") {
 						missingDns.push(container.name);
-						return Console.log(`[dns] ⚠ Container '${container.name}' is running but has no DNS record. Recreate it for DNS to work.`);
+						return Console.log(
+							`[dns] ⚠ Container '${container.name}' is running but has no DNS record. Recreate it for DNS to work.`,
+						);
 					}
-					return Console.log(`[dns] Container '${container.name}' → ${digOutput.trim()}`);
+					return Console.log(
+						`[dns] Container '${container.name}' → ${digOutput.trim()}`,
+					);
 				}),
 			),
 		);
 
 		if (changed) {
 			yield* Console.log("");
-			yield* Console.log("DNS configuration changed. Restart your containers for changes to take effect:");
+			yield* Console.log(
+				"DNS configuration changed. Restart your containers for changes to take effect:",
+			);
 			yield* Console.log("  container system stop && container system start");
 		} else if (missingDns.length > 0) {
 			yield* Console.log("");
-			yield* Console.log("DNS records are missing for some containers. Recreate them for DNS to work.");
+			yield* Console.log(
+				"DNS records are missing for some containers. Recreate them for DNS to work.",
+			);
 		} else {
 			yield* Console.log("");
 			yield* Console.log("DNS configuration is correct.");
@@ -76,9 +110,7 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 	}),
 ).pipe(CliCommand.withDescription("Check and fix DNS configuration"));
 
-export const dnsCmd = CliCommand.make("dns", {}, () =>
-	Effect.void,
-).pipe(
+export const dnsCmd = CliCommand.make("dns", {}, () => Effect.void).pipe(
 	CliCommand.withDescription("DNS utilities"),
 	CliCommand.withSubcommands([doctorCmd]),
 );

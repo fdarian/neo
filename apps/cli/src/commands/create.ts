@@ -12,9 +12,7 @@ export const createCmd = CliCommand.make("create", { name: nameArg }, (args) =>
 		const configDir = yield* getConfigDir;
 		const sharedDir = `${configDir}/containers/${name}/shared`;
 
-		yield* Command.make("mkdir", "-p", sharedDir).pipe(
-			Command.exitCode,
-		);
+		yield* Command.make("mkdir", "-p", sharedDir).pipe(Command.exitCode);
 
 		return yield* Command.make(
 			"container",
