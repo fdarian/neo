@@ -19,5 +19,8 @@
 		"@typescript/native-preview": "^7.0.0-dev.20260130.1",
 		"effect": "^3.19.15",
 		"typescript": "latest"
+	},
+	"dependencies": {
+		"get-port": "^7.1.0"
 	}
 }
