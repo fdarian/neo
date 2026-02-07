@@ -8,37 +8,21 @@ const getShimBinDir = Effect.gen(function* () {
 });
 
 const xclipScript = `#!/bin/sh
-PORT=$(neo child clipboardDaemonPort)
-DAEMON_HOST=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)
-URL="http://$DAEMON_HOST:$PORT/clipboard"
-OUTPUT=false
 for arg in "$@"; do
   case "$arg" in
-    -o) OUTPUT=true ;;
+    -o) exec neo child clipboard get ;;
   esac
 done
-if [ "$OUTPUT" = "true" ]; then
-  exec curl -sf "$URL"
-else
-  exec curl -sf -X POST --data-binary @- "$URL"
-fi
+exec neo child clipboard push
 `;
 
 const xselScript = `#!/bin/sh
-PORT=$(neo child clipboardDaemonPort)
-DAEMON_HOST=$(awk '/^nameserver/{print $2; exit}' /etc/resolv.conf)
-URL="http://$DAEMON_HOST:$PORT/clipboard"
-OUTPUT=false
 for arg in "$@"; do
   case "$arg" in
-    -o|--output) OUTPUT=true ;;
+    -o|--output) exec neo child clipboard get ;;
   esac
 done
-if [ "$OUTPUT" = "true" ]; then
-  exec curl -sf "$URL"
-else
-  exec curl -sf -X POST --data-binary @- "$URL"
-fi
+exec neo child clipboard push
 `;
 
 export const writeClipboardShims = Effect.gen(function* () {

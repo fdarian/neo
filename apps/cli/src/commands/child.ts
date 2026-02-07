@@ -1,6 +1,6 @@
 import { Command as CliCommand } from "@effect/cli";
 import { Console, Effect } from "effect";
-import * as Daemon from "#src/clipboard/daemon.ts";
+import * as ClipboardClient from "#src/clipboard/client.ts";
 import { writeClipboardShims } from "#src/clipboard/shims.ts";
 import { ChildSharedConfig } from "#src/config.ts";
 
@@ -13,16 +13,20 @@ const setupCmd = CliCommand.make("setup", {}, () =>
 	}).pipe(Effect.provide(ChildLayers)),
 ).pipe(CliCommand.withDescription("Set up container environment"));
 
-const clipboardDaemonPort = CliCommand.make("clipboardDaemonPort", {}, () =>
-	Effect.gen(function* () {
-		const port = yield* Daemon.SharedPort.read.pipe(
-			Effect.provide(ChildSharedConfig),
-		);
-		yield* Console.log(port);
-	}),
-).pipe(CliCommand.withDescription("Set up container environment"));
+const clipboardGetCmd = CliCommand.make("get", {}, () =>
+	ClipboardClient.getClipboard.pipe(Effect.provide(ChildLayers)),
+).pipe(CliCommand.withDescription("Get clipboard content from host"));
+
+const clipboardPushCmd = CliCommand.make("push", {}, () =>
+	ClipboardClient.pushClipboard.pipe(Effect.provide(ChildLayers)),
+).pipe(CliCommand.withDescription("Push clipboard content to host"));
+
+const clipboardCmd = CliCommand.make("clipboard", {}, () => Effect.void).pipe(
+	CliCommand.withDescription("Clipboard operations"),
+	CliCommand.withSubcommands([clipboardGetCmd, clipboardPushCmd]),
+);
 
 export const childCmd = CliCommand.make("child", {}, () => Effect.void).pipe(
 	CliCommand.withDescription("Container child utilities"),
-	CliCommand.withSubcommands([setupCmd, clipboardDaemonPort]),
+	CliCommand.withSubcommands([setupCmd, clipboardCmd]),
 );
