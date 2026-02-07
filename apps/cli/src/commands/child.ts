@@ -4,11 +4,13 @@ import * as Daemon from "#src/clipboard/daemon.ts";
 import { writeClipboardShims } from "#src/clipboard/shims.ts";
 import { ChildSharedConfig } from "#src/config.ts";
 
+const ChildLayers = ChildSharedConfig;
+
 const setupCmd = CliCommand.make("setup", {}, () =>
 	Effect.gen(function* () {
 		const binDir = yield* writeClipboardShims;
 		yield* Console.log(`export PATH="${binDir}:$PATH"`);
-	}),
+	}).pipe(Effect.provide(ChildLayers)),
 ).pipe(CliCommand.withDescription("Set up container environment"));
 
 const clipboardDaemonPort = CliCommand.make("clipboardDaemonPort", {}, () =>

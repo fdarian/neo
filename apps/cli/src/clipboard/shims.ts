@@ -1,8 +1,11 @@
 import { FileSystem } from "@effect/platform";
 import { Effect } from "effect";
-import { childNeoDir } from "#src/config.ts";
+import { SharedConfig } from "#src/config.ts";
 
-const shimBinDir = `${childNeoDir}/bin`;
+const getShimBinDir = Effect.gen(function* () {
+	const dir = (yield* SharedConfig).dir;
+	return `${dir}/bin`;
+});
 
 const xclipScript = `#!/bin/sh
 PORT=$(neo child clipboardDaemonPort)
@@ -40,6 +43,7 @@ fi
 
 export const writeClipboardShims = Effect.gen(function* () {
 	const fs = yield* FileSystem.FileSystem;
+	const shimBinDir = yield* getShimBinDir;
 	yield* fs.makeDirectory(shimBinDir, { recursive: true });
 	yield* Effect.all(
 		[
