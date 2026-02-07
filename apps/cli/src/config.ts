@@ -25,6 +25,7 @@ export class HostConfig extends Effect.Service<HostConfig>()(
 export const getConfigDir = HostConfig.dir;
 
 export const mountedVolumeDir = "/shared";
+export const childNeoDir = `${mountedVolumeDir}/.neo`;
 
 export class SharedConfig extends Context.Tag("config/SharedConfig")<
 	SharedConfig,
@@ -40,5 +41,5 @@ export const HostSharedConfig = (containerName: string) =>
 	);
 
 export const ChildSharedConfig = Layer.succeed(SharedConfig, {
-	dir: `${mountedVolumeDir}/.neo`,
+	dir: childNeoDir,
 });
