@@ -70,15 +70,13 @@ export namespace SharedPort {
 				.slice(1)
 				.filter((line) => line.includes("running"))
 				.map((line) => line.split(/\s+/)[0]);
-			yield* Effect.forEach(names, (name) =>
-				writeForContainer(port, name),
-			);
+			yield* Effect.forEach(names, (name) => writeForContainer(port, name));
 		});
 }
 
 const getClipboard = Effect.gen(function* () {
 	const content = yield* Command.make("pbpaste").pipe(Command.string);
-	yield* Effect.logDebug(`Forwarding ${content}`);
+	yield* Effect.logDebug(`Forwarding <>${content}</>`);
 	return HttpServerResponse.text(content);
 });
 
@@ -86,7 +84,7 @@ const postClipboard = Effect.gen(function* () {
 	const request = yield* HttpServerRequest.HttpServerRequest;
 	const body = yield* request.text;
 	yield* Command.make("pbcopy").pipe(Command.feed(body), Command.exitCode);
-	yield* Effect.logDebug(`Received ${body}`);
+	yield* Effect.logDebug(`Received <>${body}</>`);
 	return HttpServerResponse.text("ok");
 });
 
