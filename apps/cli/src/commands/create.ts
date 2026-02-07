@@ -1,7 +1,8 @@
 import { Args, Command as CliCommand } from "@effect/cli";
 import { Command } from "@effect/platform";
 import { Effect, Option } from "effect";
-import { getConfigDir } from "#src/config.ts";
+import { HostConfig } from "#src/config.ts";
+import { HostLayers } from "#src/host.ts";
 import { generateSlug } from "#src/random-slug.ts";
 
 const nameArg = Args.text({ name: "name" }).pipe(Args.optional);
@@ -9,12 +10,9 @@ const nameArg = Args.text({ name: "name" }).pipe(Args.optional);
 export const createCmd = CliCommand.make("create", { name: nameArg }, (args) =>
 	Effect.gen(function* () {
 		const name = Option.getOrElse(args.name, () => generateSlug());
-		const configDir = yield* getConfigDir;
-		const sharedDir = `${configDir}/containers/${name}/shared`;
+		const sharedDir = (yield* HostConfig.containerDir(name)).sharedDir;
 
-		yield* Command.make("mkdir", "-p", sharedDir).pipe(
-			Command.exitCode,
-		);
+		yield* Command.make("mkdir", "-p", sharedDir).pipe(Command.exitCode);
 
 		return yield* Command.make(
 			"container",
@@ -36,5 +34,5 @@ export const createCmd = CliCommand.make("create", { name: nameArg }, (args) =>
 			Command.stderr("inherit"),
 			Command.exitCode,
 		);
-	}),
+	}).pipe(Effect.provide(HostLayers)),
 ).pipe(CliCommand.withDescription("Create a new container"));

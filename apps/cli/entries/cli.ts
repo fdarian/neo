@@ -1,8 +1,9 @@
-import pkg from "../package.json" with { type: "json" };
 import { Command } from "@effect/cli";
+import { FetchHttpClient } from "@effect/platform";
 import { BunContext, BunRuntime } from "@effect/platform-bun";
-import { Effect } from "effect";
+import { Effect, Layer } from "effect";
 import { neoCmd } from "#src/commands/index.ts";
+import pkg from "../package.json" with { type: "json" };
 
 export const cli = Command.run(neoCmd, {
 	name: "neo",
@@ -10,6 +11,6 @@ export const cli = Command.run(neoCmd, {
 });
 
 cli(process.argv).pipe(
-	Effect.provide(BunContext.layer),
+	Effect.provide(Layer.mergeAll(BunContext.layer, FetchHttpClient.layer)),
 	BunRuntime.runMain,
 );
