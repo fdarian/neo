@@ -42,14 +42,18 @@ export namespace SharedPort {
 
 	export const read = Effect.gen(function* () {
 		const fs = yield* FileSystem.FileSystem;
-		const content = yield* fs.readFileString(yield* getPath);
+		const path = yield* getPath;
+		yield* Effect.logDebug(`Reading ${path}`);
+		const content = yield* fs.readFileString(path);
 		return Number(content);
 	});
 
 	export const write = (port: number) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
-			yield* fs.writeFileString(yield* getPath, String(port));
+			const path = yield* getPath;
+			yield* fs.writeFileString(path, String(port));
+			yield* Effect.logDebug(`Wrote ${port} to ${path}`);
 		});
 }
 
