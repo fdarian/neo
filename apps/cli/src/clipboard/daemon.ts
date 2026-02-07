@@ -79,22 +79,24 @@ export namespace SharedDaemonInfo {
 		});
 }
 
-const getClipboard = Effect.gen(function* () {
-	const content = yield* Command.make("pbpaste").pipe(Command.string);
-	yield* Effect.logDebug(`Forwarding <>${content}</>`);
-	return HttpServerResponse.text(content);
-});
+export const makeRouter = (token: string) => {
+	let clipboardContent = "";
 
-const postClipboard = Effect.gen(function* () {
-	const request = yield* HttpServerRequest.HttpServerRequest;
-	const body = yield* request.text;
-	yield* Command.make("pbcopy").pipe(Command.feed(body), Command.exitCode);
-	yield* Effect.logDebug(`Received <>${body}</>`);
-	return HttpServerResponse.text("ok");
-});
+	const getClipboard = Effect.gen(function* () {
+		yield* Effect.logDebug(`Forwarding <>${clipboardContent}</>`);
+		return HttpServerResponse.text(clipboardContent);
+	});
 
-export const makeRouter = (token: string) =>
-	HttpRouter.empty.pipe(
+	const postClipboard = Effect.gen(function* () {
+		const request = yield* HttpServerRequest.HttpServerRequest;
+		const body = yield* request.text;
+		clipboardContent = body;
+		yield* Command.make("pbcopy").pipe(Command.feed(body), Command.exitCode);
+		yield* Effect.logDebug(`Received <>${body}</>`);
+		return HttpServerResponse.text("ok");
+	});
+
+	return HttpRouter.empty.pipe(
 		HttpRouter.get("/clipboard", getClipboard),
 		HttpRouter.post("/clipboard", postClipboard),
 		HttpRouter.use((httpApp) =>
@@ -107,3 +109,4 @@ export const makeRouter = (token: string) =>
 			}),
 		),
 	);
+};
