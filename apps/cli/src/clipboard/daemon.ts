@@ -1,7 +1,6 @@
 import {
 	Command,
 	FileSystem,
-	HttpMiddleware,
 	HttpRouter,
 	HttpServerRequest,
 	HttpServerResponse,
@@ -72,7 +71,7 @@ const postClipboard = Effect.gen(function* () {
 	return HttpServerResponse.text("ok");
 });
 
-export const server = HttpRouter.empty.pipe(
+export const router = HttpRouter.empty.pipe(
 	HttpRouter.get("/clipboard", getClipboard),
 	HttpRouter.post("/clipboard", postClipboard),
 );
