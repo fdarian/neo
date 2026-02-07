@@ -48,6 +48,7 @@ const daemonCmd = CliCommand.make("daemon", {}, () =>
 
 		const port = yield* Effect.tryPromise(() => getPort());
 		yield* Daemon.Config.write({ pid: process.pid, port });
+		yield* Daemon.SharedPort.writeAllRunning(port);
 		yield* Effect.addFinalizer(() => Effect.logInfo("Shutting down server"));
 		yield* Layer.launch(
 			server.pipe(

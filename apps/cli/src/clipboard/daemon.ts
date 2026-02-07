@@ -5,8 +5,8 @@ import {
 	HttpServerRequest,
 	HttpServerResponse,
 } from "@effect/platform";
-import { Effect, Schema } from "effect";
-import { HostConfig, SharedConfig } from "#src/config.ts";
+import { Effect, Layer, Schema } from "effect";
+import { HostConfig, HostSharedConfig, SharedConfig } from "#src/config.ts";
 
 export namespace Config {
 	export const DaemonConfig = Schema.Struct({
@@ -54,6 +54,25 @@ export namespace SharedPort {
 			const path = yield* getPath;
 			yield* fs.writeFileString(path, String(port));
 			yield* Effect.logDebug(`Wrote ${port} to ${path}`);
+		});
+
+	export const writeForContainer = (port: number, containerName: string) =>
+		write(port).pipe(Effect.provide(HostSharedConfig(containerName)));
+
+	export const writeAllRunning = (port: number) =>
+		Effect.gen(function* () {
+			const output = yield* Command.make("container", "ls").pipe(
+				Command.string,
+			);
+			const names = output
+				.trim()
+				.split("\n")
+				.slice(1)
+				.filter((line) => line.includes("running"))
+				.map((line) => line.split(/\s+/)[0]);
+			yield* Effect.forEach(names, (name) =>
+				writeForContainer(port, name),
+			);
 		});
 }
 

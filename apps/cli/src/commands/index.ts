@@ -9,7 +9,7 @@ import { createCmd } from "#src/commands/create.ts";
 import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
-import { HostConfig, HostSharedConfig, mountedVolumeDir } from "#src/config.ts";
+import { HostConfig, mountedVolumeDir } from "#src/config.ts";
 import { HostLayers } from "#src/host.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
@@ -25,9 +25,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 
 		yield* ensureDaemonRunning;
 		const { port } = yield* Daemon.Config.load;
-		yield* Daemon.SharedPort.write(port).pipe(
-			Effect.provide(HostSharedConfig(containerName)),
-		);
+		yield* Daemon.SharedPort.writeForContainer(port, containerName);
 
 		yield* Command.make("container", "start", containerName).pipe(
 			Command.stdout("inherit"),
