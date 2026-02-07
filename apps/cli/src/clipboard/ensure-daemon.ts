@@ -1,13 +1,17 @@
 import { Command } from "@effect/platform";
-import { Effect, Option, Scope } from "effect";
+import { Effect, Option, Schedule, Scope } from "effect";
 import * as Daemon from "./daemon.ts";
+
+const waitForConfig = Daemon.Config.load.pipe(
+	Effect.retry(Schedule.spaced("100 millis").pipe(Schedule.compose(Schedule.recurs(50)))),
+);
 
 export const ensureDaemonRunning = Effect.gen(function* () {
 	const existing = yield* Daemon.Config.load.pipe(
 		Effect.flatMap((info) =>
 			Effect.try(() => {
 				process.kill(info.pid, 0);
-				return info.port;
+				return info;
 			}),
 		),
 		Effect.option,
@@ -20,4 +24,6 @@ export const ensureDaemonRunning = Effect.gen(function* () {
 		Command.start,
 		Scope.extend(daemonScope),
 	);
+
+	return yield* waitForConfig;
 });

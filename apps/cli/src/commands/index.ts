@@ -23,8 +23,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			onSome: (m) => m.containerName,
 		});
 
-		yield* ensureDaemonRunning;
-		const config = yield* Daemon.Config.load;
+		const config = yield* ensureDaemonRunning;
 		yield* Daemon.SharedDaemonInfo.writeForContainer({ port: config.port, token: config.token }, containerName);
 
 		yield* Command.make("container", "start", containerName).pipe(

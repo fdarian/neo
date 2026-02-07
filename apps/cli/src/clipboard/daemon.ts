@@ -52,7 +52,9 @@ export namespace SharedDaemonInfo {
 	export const write = (info: { port: number; token: string }) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
-			const path = yield* getPath;
+			const dir = (yield* SharedConfig).dir;
+			yield* fs.makeDirectory(dir, { recursive: true });
+			const path = `${dir}/daemon-info`;
 			yield* fs.writeFileString(path, JSON.stringify(info));
 			yield* Effect.logDebug(`Wrote port ${info.port} and token to ${path}`);
 		});
