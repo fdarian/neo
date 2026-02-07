@@ -5,13 +5,14 @@ import {
 	HttpServerRequest,
 	HttpServerResponse,
 } from "@effect/platform";
-import { Effect, Layer, Schema } from "effect";
+import { Effect, Schema } from "effect";
 import { HostConfig, HostSharedConfig, SharedConfig } from "#src/config.ts";
 
 export namespace Config {
 	export const DaemonConfig = Schema.Struct({
 		pid: Schema.Number,
 		port: Schema.Number,
+		token: Schema.String,
 	});
 	const ConfigFromJson = Schema.parseJson(DaemonConfig);
 	export type DaemonConfig = typeof DaemonConfig.Type;
@@ -35,9 +36,9 @@ export namespace Config {
 	});
 }
 
-export namespace SharedPort {
+export namespace SharedDaemonInfo {
 	const getPath = Effect.gen(function* () {
-		return `${(yield* SharedConfig).dir}/daemon-port`;
+		return `${(yield* SharedConfig).dir}/daemon-info`;
 	});
 
 	export const read = Effect.gen(function* () {
@@ -45,21 +46,23 @@ export namespace SharedPort {
 		const path = yield* getPath;
 		yield* Effect.logDebug(`Reading ${path}`);
 		const content = yield* fs.readFileString(path);
-		return Number(content);
+		return JSON.parse(content) as { port: number; token: string };
 	});
 
-	export const write = (port: number) =>
+	export const write = (info: { port: number; token: string }) =>
 		Effect.gen(function* () {
 			const fs = yield* FileSystem.FileSystem;
 			const path = yield* getPath;
-			yield* fs.writeFileString(path, String(port));
-			yield* Effect.logDebug(`Wrote ${port} to ${path}`);
+			yield* fs.writeFileString(path, JSON.stringify(info));
+			yield* Effect.logDebug(`Wrote port ${info.port} and token to ${path}`);
 		});
 
-	export const writeForContainer = (port: number, containerName: string) =>
-		write(port).pipe(Effect.provide(HostSharedConfig(containerName)));
+	export const writeForContainer = (
+		info: { port: number; token: string },
+		containerName: string,
+	) => write(info).pipe(Effect.provide(HostSharedConfig(containerName)));
 
-	export const writeAllRunning = (port: number) =>
+	export const writeAllRunning = (info: { port: number; token: string }) =>
 		Effect.gen(function* () {
 			const output = yield* Command.make("container", "ls").pipe(
 				Command.string,
@@ -70,7 +73,7 @@ export namespace SharedPort {
 				.slice(1)
 				.filter((line) => line.includes("running"))
 				.map((line) => line.split(/\s+/)[0]);
-			yield* Effect.forEach(names, (name) => writeForContainer(port, name));
+			yield* Effect.forEach(names, (name) => writeForContainer(info, name));
 		});
 }
 
@@ -88,8 +91,17 @@ const postClipboard = Effect.gen(function* () {
 	return HttpServerResponse.text("ok");
 });
 
-export const router = HttpRouter.empty.pipe(
-	HttpRouter.get("/clipboard", getClipboard),
-	HttpRouter.post("/clipboard", postClipboard),
-);
-// .pipe(HttpRouter.use(HttpMiddleware.logger));
+export const makeRouter = (token: string) =>
+	HttpRouter.empty.pipe(
+		HttpRouter.get("/clipboard", getClipboard),
+		HttpRouter.post("/clipboard", postClipboard),
+		HttpRouter.use((httpApp) =>
+			Effect.gen(function* () {
+				const request = yield* HttpServerRequest.HttpServerRequest;
+				if (request.headers.authorization !== `Bearer ${token}`) {
+					return HttpServerResponse.text("Unauthorized", { status: 401 });
+				}
+				return yield* httpApp;
+			}),
+		),
+	);

@@ -24,8 +24,8 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 		});
 
 		yield* ensureDaemonRunning;
-		const { port } = yield* Daemon.Config.load;
-		yield* Daemon.SharedPort.writeForContainer(port, containerName);
+		const config = yield* Daemon.Config.load;
+		yield* Daemon.SharedDaemonInfo.writeForContainer({ port: config.port, token: config.token }, containerName);
 
 		yield* Command.make("container", "start", containerName).pipe(
 			Command.stdout("inherit"),

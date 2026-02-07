@@ -10,11 +10,12 @@ Container                              Host (macOS)
 neovim / lazygit / any app             neo clipboard daemon
   ↓                                    @effect/platform HttpServer
 /shared/.neo/bin/xclip (shim)  ──HTTP──→ 0.0.0.0:<port>
-  ↓                                    GET  /clipboard → pbpaste
-curl <host-gateway-ip>                 POST /clipboard → pbcopy
+  ↓                                    Authorization: Bearer <token>
+curl <host-gateway-ip>                 GET  /clipboard → pbpaste
+                                       POST /clipboard → pbcopy
 ```
 
-The daemon runs on the host, listens on a random port, and proxies clipboard read/write to `pbcopy`/`pbpaste`. Shim scripts inside the container call the daemon via `curl`.
+The daemon runs on the host, listens on a random port, and proxies clipboard read/write to `pbcopy`/`pbpaste`. Shim scripts inside the container call the daemon via `curl` with bearer token authentication.
 
 ## Setup
 
@@ -35,9 +36,17 @@ This writes shim scripts to `/shared/.neo/bin/` and prepends the directory to `P
 ## How It Works
 
 1. `neo` on host calls `ensureDaemonRunning` → spawns `neo clipboard daemon` if not running
-2. Daemon picks a free port, writes `{pid, port}` to `~/.config/neo/daemon.json`
-3. Port number is written to the container's shared volume at `.neo/daemon-port`
-4. Inside the container, `neo child setup` writes `xclip`/`xsel` shims that read the port file, resolve the host gateway IP from `/etc/resolv.conf`, and `curl` the daemon
+2. Daemon picks a free port and generates a random bearer token, writes `{pid, port, token}` to `~/.config/neo/daemon.json`
+3. A JSON file with daemon info (port and token) is written to the container's shared volume at `.neo/daemon-info`
+4. Inside the container, `neo child setup` writes `xclip`/`xsel` shims that read the `daemon-info` file for port and token, resolve the host gateway IP from `/etc/resolv.conf`, and `curl` the daemon with the `Authorization: Bearer <token>` header
+
+## Security
+
+- The daemon binds to `0.0.0.0` so containers can reach it via the host gateway IP
+- A random bearer token is generated on each daemon start
+- All HTTP requests must include the `Authorization: Bearer <token>` header
+- The token is shared with containers via the `daemon-info` file on the shared volume
+- The daemon validates the bearer token on every request and rejects requests without a valid token
 
 ## Commands
 

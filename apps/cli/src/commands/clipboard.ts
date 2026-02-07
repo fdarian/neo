@@ -1,15 +1,11 @@
 import { Command as CliCommand } from "@effect/cli";
 import { HttpMiddleware, HttpServer } from "@effect/platform";
-import { BunContext, BunHttpServer } from "@effect/platform-bun";
+import { BunHttpServer } from "@effect/platform-bun";
 import { Effect, Layer, Option } from "effect";
 import getPort from "get-port";
 import * as readline from "readline";
 import * as Daemon from "#src/clipboard/daemon.ts";
 import { HostLayers } from "#src/host.ts";
-
-const server = HttpServer.serve(Daemon.router, HttpMiddleware.logger).pipe(
-	HttpServer.withLogAddress,
-);
 
 const confirm = (message: string) =>
 	Effect.promise<boolean>(
@@ -47,9 +43,13 @@ const daemonCmd = CliCommand.make("daemon", {}, () =>
 		}
 
 		const port = yield* Effect.tryPromise(() => getPort());
-		yield* Daemon.Config.write({ pid: process.pid, port });
-		yield* Daemon.SharedPort.writeAllRunning(port);
+		const token = crypto.randomUUID();
+		yield* Daemon.Config.write({ pid: process.pid, port, token });
+		yield* Daemon.SharedDaemonInfo.writeAllRunning({ port, token });
 		yield* Effect.addFinalizer(() => Effect.logInfo("Shutting down server"));
+		const server = HttpServer.serve(Daemon.makeRouter(token), HttpMiddleware.logger).pipe(
+			HttpServer.withLogAddress,
+		);
 		yield* Layer.launch(
 			server.pipe(
 				Layer.provide(BunHttpServer.layer({ port: port, hostname: "0.0.0.0" })),

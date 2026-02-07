@@ -22,10 +22,12 @@ const resolveHostGateway = Effect.gen(function* () {
 });
 
 export const getClipboard = Effect.gen(function* () {
-	const port = yield* Daemon.SharedPort.read;
+	const info = yield* Daemon.SharedDaemonInfo.read;
 	const host = yield* resolveHostGateway;
 
-	const response = yield* HttpClient.get(`http://${host}:${port}/clipboard`);
+	const response = yield* HttpClient.get(`http://${host}:${info.port}/clipboard`, {
+		headers: { Authorization: `Bearer ${info.token}` },
+	});
 
 	const text = yield* response.text;
 
@@ -33,12 +35,13 @@ export const getClipboard = Effect.gen(function* () {
 });
 
 export const pushClipboard = Effect.gen(function* () {
-	const port = yield* Daemon.SharedPort.read;
+	const info = yield* Daemon.SharedDaemonInfo.read;
 	const host = yield* resolveHostGateway;
 
 	const body = yield* Effect.promise(() => Bun.stdin.text());
 
-	yield* HttpClient.post(`http://${host}:${port}/clipboard`, {
+	yield* HttpClient.post(`http://${host}:${info.port}/clipboard`, {
 		body: HttpBody.text(body),
+		headers: { Authorization: `Bearer ${info.token}` },
 	});
 });

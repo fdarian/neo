@@ -12,6 +12,7 @@
 - `src/clipboard/` — daemon router, shim scripts, daemon lifecycle
 - `neo clipboard daemon` — host-side HTTP server
 - `neo child setup` — container-side shim installer (called from `.zshrc`)
+- Secured with per-session Bearer token auth (see `docs/clipboard.md`)
 - See `docs/clipboard.md` for architecture
 
 ## Conventions
