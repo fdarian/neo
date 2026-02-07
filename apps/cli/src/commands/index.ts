@@ -65,7 +65,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			Command.stderr("inherit"),
 			Command.exitCode,
 		);
-	}).pipe(Effect.provide(HostLayers)),
+	}).pipe(Effect.scoped, Effect.provide(HostLayers)),
 );
 
 export const neoCmd = rootCmd.pipe(

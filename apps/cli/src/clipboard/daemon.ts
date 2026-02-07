@@ -34,6 +34,11 @@ export namespace Config {
 		const content = yield* fs.readFileString(path);
 		return yield* Schema.decode(ConfigFromJson)(content);
 	});
+
+	export const remove = Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		yield* fs.remove(yield* getPath);
+	}).pipe(Effect.ignore);
 }
 
 export namespace SharedDaemonInfo {
@@ -77,6 +82,15 @@ export namespace SharedDaemonInfo {
 				.map((line) => line.split(/\s+/)[0]);
 			yield* Effect.forEach(names, (name) => writeForContainer(info, name));
 		});
+
+	export const removeAll = Effect.gen(function* () {
+		const fs = yield* FileSystem.FileSystem;
+		const containersDir = `${yield* HostConfig.dir}/containers`;
+		const entries = yield* fs.readDirectory(containersDir);
+		yield* Effect.forEach(entries, (name) =>
+			fs.remove(`${containersDir}/${name}/shared/.neo/daemon-info`).pipe(Effect.ignore)
+		);
+	}).pipe(Effect.ignore);
 }
 
 const getClipboard = Effect.gen(function* () {

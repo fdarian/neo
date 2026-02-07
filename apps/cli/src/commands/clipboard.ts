@@ -4,6 +4,7 @@ import { BunHttpServer } from "@effect/platform-bun";
 import { Effect, Layer, Option } from "effect";
 import getPort from "get-port";
 import * as readline from "readline";
+import { ClientRegistry } from "#src/clipboard/client-registry.ts";
 import * as Daemon from "#src/clipboard/daemon.ts";
 import { HostLayers } from "#src/host.ts";
 
@@ -46,7 +47,14 @@ const daemonCmd = CliCommand.make("daemon", {}, () =>
 		const token = crypto.randomUUID();
 		yield* Daemon.Config.write({ pid: process.pid, port, token });
 		yield* Daemon.SharedDaemonInfo.writeAllRunning({ port, token });
-		yield* Effect.addFinalizer(() => Effect.logInfo("Shutting down server"));
+		yield* Effect.addFinalizer(() =>
+			Effect.gen(function* () {
+				yield* Effect.logInfo("Shutting down server");
+				yield* Daemon.Config.remove;
+				yield* Daemon.SharedDaemonInfo.removeAll;
+				yield* ClientRegistry.remove;
+			}),
+		);
 		const server = HttpServer.serve(Daemon.makeRouter(token), HttpMiddleware.logger).pipe(
 			HttpServer.withLogAddress,
 		);
