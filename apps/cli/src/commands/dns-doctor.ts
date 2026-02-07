@@ -15,13 +15,25 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 		).pipe(Command.string);
 
 		if (!dnsLsOutput.includes("neo")) {
-			yield* Command.make("container", "system", "dns", "create", "neo").pipe(
+			const neoExitCode = yield* Command.make(
+				"container",
+				"system",
+				"dns",
+				"create",
+				"neo",
+			).pipe(
 				Command.stdout("inherit"),
 				Command.stderr("inherit"),
 				Command.exitCode,
 			);
-			yield* Console.log("[dns] Created DNS resolver 'neo'.");
-			changed = true;
+			if (neoExitCode === 0) {
+				yield* Console.log("[dns] Created DNS resolver 'neo'.");
+				changed = true;
+			} else {
+				yield* Console.log(
+					"[dns] Failed to create DNS resolver 'neo'. Try running with sudo.",
+				);
+			}
 		} else {
 			yield* Console.log("[dns] DNS resolver 'neo' already exists.");
 		}
@@ -36,7 +48,7 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 		).pipe(Command.string);
 
 		if (domainOutput.trim() !== "neo") {
-			yield* Command.make(
+			const domainExitCode = yield* Command.make(
 				"container",
 				"system",
 				"property",
@@ -48,8 +60,14 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 				Command.stderr("inherit"),
 				Command.exitCode,
 			);
-			yield* Console.log("[dns] Set dns.domain to 'neo'.");
-			changed = true;
+			if (domainExitCode === 0) {
+				yield* Console.log("[dns] Set dns.domain to 'neo'.");
+				changed = true;
+			} else {
+				yield* Console.log(
+					"[dns] Failed to set dns.domain. Try running with sudo.",
+				);
+			}
 		} else {
 			yield* Console.log("[dns] dns.domain is already set to 'neo'.");
 		}
@@ -61,7 +79,8 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 			"--format",
 			"json",
 		).pipe(Command.string);
-		const containers = JSON.parse(containerListOutput);
+		const containers =
+			containerListOutput.trim() === "" ? [] : JSON.parse(containerListOutput);
 
 		const runningContainers = containers.filter(
 			(container: any) => container.status === "running",
@@ -74,19 +93,19 @@ const doctorCmd = CliCommand.make("doctor", {}, () =>
 				"@127.0.0.1",
 				"-p",
 				"2053",
-				`${container.name}.neo`,
+				`${container.configuration.id}.neo`,
 				"+short",
 			).pipe(
 				Command.string,
 				Effect.flatMap((digOutput) => {
 					if (digOutput.trim() === "") {
-						missingDns.push(container.name);
+						missingDns.push(container.configuration.id);
 						return Console.log(
-							`[dns] ⚠ Container '${container.name}' is running but has no DNS record. Recreate it for DNS to work.`,
+							`[dns] ! Container '${container.configuration.id}' is running but has no DNS record. Recreate it for DNS to work.`,
 						);
 					}
 					return Console.log(
-						`[dns] Container '${container.name}' → ${digOutput.trim()}`,
+						`[dns] Container '${container.configuraiton.id}' → ${digOutput.trim()}`,
 					);
 				}),
 			),

@@ -1,11 +1,15 @@
 import { Command as CliCommand } from "@effect/cli";
 import { Command } from "@effect/platform";
 import { Effect, Option } from "effect";
+import * as Daemon from "#src/clipboard/daemon.ts";
+import { ensureDaemonRunning } from "#src/clipboard/ensure-daemon.ts";
+import { childCmd } from "#src/commands/child.ts";
+import { clipboardCmd } from "#src/commands/clipboard.ts";
 import { createCmd } from "#src/commands/create.ts";
 import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
-import { HostConfig, mountedVolumeDir } from "#src/config.ts";
+import { HostConfig, HostSharedConfig, mountedVolumeDir } from "#src/config.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
 const rootCmd = CliCommand.make("neo", {}, () =>
@@ -17,6 +21,12 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			onNone: () => "one",
 			onSome: (m) => m.containerName,
 		});
+
+		yield* ensureDaemonRunning;
+		const { port } = yield* Daemon.Config.load;
+		yield* Daemon.SharedPort.write(port).pipe(
+			Effect.provide(HostSharedConfig(containerName)),
+		);
 
 		yield* Command.make("container", "start", containerName).pipe(
 			Command.stdout("inherit"),
@@ -61,5 +71,12 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 );
 
 export const neoCmd = rootCmd.pipe(
-	CliCommand.withSubcommands([lsCmd, createCmd, removeCmd, dnsCmd]),
+	CliCommand.withSubcommands([
+		lsCmd,
+		createCmd,
+		removeCmd,
+		dnsCmd,
+		clipboardCmd,
+		childCmd,
+	]),
 );
