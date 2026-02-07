@@ -3,15 +3,21 @@ import { Command } from "@effect/platform";
 import { Effect, Option } from "effect";
 import * as Daemon from "#src/clipboard/daemon.ts";
 import { ensureDaemonRunning } from "#src/clipboard/ensure-daemon.ts";
+import { writeClipboardShims } from "#src/clipboard/shims.ts";
 import { childCmd } from "#src/commands/child.ts";
 import { clipboardCmd } from "#src/commands/clipboard.ts";
 import { createCmd } from "#src/commands/create.ts";
 import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
-import { writeClipboardShims } from "#src/clipboard/shims.ts";
-import { HostConfig, HostSharedConfig, childNeoDir, mountedVolumeDir } from "#src/config.ts";
+import {
+	childNeoDir,
+	HostConfig,
+	HostSharedConfig,
+	mountedVolumeDir,
+} from "#src/config.ts";
 import { HostLayers } from "#src/host.ts";
+import { renderCommand } from "#src/lib/effect.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
 const rootCmd = CliCommand.make("neo", {}, () =>
@@ -25,7 +31,10 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 		});
 
 		const config = yield* ensureDaemonRunning;
-		yield* Daemon.SharedDaemonInfo.writeForContainer({ port: config.port, token: config.token }, containerName);
+		yield* Daemon.SharedDaemonInfo.writeForContainer(
+			{ port: config.port, token: config.token },
+			containerName,
+		);
 
 		yield* Command.make("container", "start", containerName).pipe(
 			Command.stdout("inherit"),
@@ -68,6 +77,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 				);
 			},
 		});
+		yield* Effect.logDebug(`Executing command: ${renderCommand(execCommand)}`);
 
 		return yield* execCommand.pipe(
 			Command.stdin("inherit"),
