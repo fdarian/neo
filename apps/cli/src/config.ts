@@ -31,11 +31,11 @@ export class SharedConfig extends Context.Tag("config/SharedConfig")<
 	{ dir: string }
 >() {}
 
-export const HostSharedConfig = (_containerName: string) =>
+export const HostSharedConfig = (containerName: string) =>
 	Layer.effect(
 		SharedConfig,
 		Effect.gen(function* () {
-			return { dir: (yield* HostConfig.containerDir("shared")).sharedDir };
+			return { dir: (yield* HostConfig.containerDir(containerName)).sharedDir };
 		}),
 	);
 
