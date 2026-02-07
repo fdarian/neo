@@ -1,4 +1,4 @@
-import { Config, Effect } from "effect";
+import { Config, Context, Effect, Layer } from "effect";
 
 export class HostConfig extends Effect.Service<HostConfig>()(
 	"config/HostConfig",
@@ -25,3 +25,20 @@ export class HostConfig extends Effect.Service<HostConfig>()(
 export const getConfigDir = HostConfig.dir;
 
 export const mountedVolumeDir = "/shared";
+
+export class SharedConfig extends Context.Tag("config/SharedConfig")<
+	SharedConfig,
+	{ dir: string }
+>() {}
+
+export const HostSharedConfig = (_containerName: string) =>
+	Layer.effect(
+		SharedConfig,
+		Effect.gen(function* () {
+			return { dir: (yield* HostConfig.containerDir("shared")).sharedDir };
+		}),
+	);
+
+export const ChildSharedConfig = Layer.succeed(SharedConfig, {
+	dir: `${mountedVolumeDir}/.neo`,
+});
