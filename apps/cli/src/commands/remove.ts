@@ -1,18 +1,18 @@
 import { Args, Command as CliCommand } from "@effect/cli";
 import { Command } from "@effect/platform";
 import { Effect, Option } from "effect";
-import { getConfigDir } from "#src/config.ts";
+import { HostConfig } from "#src/config.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
 const nameArg = Args.text({ name: "name" }).pipe(Args.optional);
 
 export const removeCmd = CliCommand.make("remove", { name: nameArg }, (args) =>
 	Effect.gen(function* () {
-		const configDir = yield* getConfigDir;
 		const nameFromArgs = args.name;
-		const nameFromCwd = resolveContainer(process.cwd(), configDir).pipe(
-			Option.map((m) => m.containerName),
-		);
+		const nameFromCwd = resolveContainer(
+			process.cwd(),
+			yield* HostConfig.dir,
+		).pipe(Option.map((m) => m.containerName));
 
 		const name = Option.orElse(nameFromArgs, () => nameFromCwd).pipe(
 			Option.getOrThrowWith(

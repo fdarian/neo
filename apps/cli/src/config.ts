@@ -1,11 +1,27 @@
-import { Effect } from "effect";
+import { Config, Effect } from "effect";
 
-export const getConfigDir = Effect.sync(() => {
-	const home = process.env.HOME;
-	if (!home) {
-		throw new Error("HOME environment variable is not set");
-	}
-	return `${home}/.config/neo`;
-});
+export class HostConfig extends Effect.Service<HostConfig>()(
+	"config/HostConfig",
+	{
+		accessors: true,
+		effect: Effect.gen(function* () {
+			const home = yield* Config.string("HOME");
+			const dir = `${home}/.config/neo`;
+
+			return {
+				dir,
+				containerDir: (name: string) => {
+					const baseDir = `${dir}/containers/${name}`;
+					return {
+						dir,
+						sharedDir: `${baseDir}/shared`,
+					};
+				},
+			};
+		}),
+	},
+) {}
+
+export const getConfigDir = HostConfig.dir;
 
 export const mountedVolumeDir = "/shared";

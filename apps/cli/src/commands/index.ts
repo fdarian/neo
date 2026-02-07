@@ -5,14 +5,13 @@ import { createCmd } from "#src/commands/create.ts";
 import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
-import { getConfigDir, mountedVolumeDir } from "#src/config.ts";
+import { HostConfig, mountedVolumeDir } from "#src/config.ts";
 import { resolveContainer } from "#src/resolve-container.ts";
 
 const rootCmd = CliCommand.make("neo", {}, () =>
 	Effect.gen(function* () {
 		const cwd = process.cwd();
-		const configDir = yield* getConfigDir;
-		const match = resolveContainer(cwd, configDir);
+		const match = resolveContainer(cwd, yield* HostConfig.dir);
 
 		const containerName = Option.match(match, {
 			onNone: () => "one",
