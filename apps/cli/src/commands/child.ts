@@ -9,7 +9,9 @@ const ChildLayers = ChildSharedConfig;
 const setupCmd = CliCommand.make("setup", {}, () =>
 	Effect.gen(function* () {
 		const binDir = yield* writeClipboardShims;
-		yield* Console.log(`export PATH="${binDir}:$PATH"`);
+		yield* Console.log(
+			`export PATH="${binDir}:$PATH"\nexport DISPLAY=:0`,
+		);
 	}).pipe(Effect.provide(ChildLayers)),
 ).pipe(CliCommand.withDescription("Set up container environment"));
 
