@@ -7,6 +7,7 @@ import { writeClipboardShims } from "#src/clipboard/shims.ts";
 import { childCmd } from "#src/commands/child.ts";
 import { clipboardCmd } from "#src/commands/clipboard.ts";
 import { createCmd } from "#src/commands/create.ts";
+import { daemonCmd } from "#src/commands/daemon.ts";
 import { dnsCmd } from "#src/commands/dns-doctor.ts";
 import { lsCmd } from "#src/commands/ls.ts";
 import { removeCmd } from "#src/commands/remove.ts";
@@ -85,7 +86,7 @@ const rootCmd = CliCommand.make("neo", {}, () =>
 			Command.stderr("inherit"),
 			Command.exitCode,
 		);
-	}).pipe(Effect.provide(HostLayers)),
+	}).pipe(Effect.scoped, Effect.provide(HostLayers)),
 );
 
 export const neoCmd = rootCmd.pipe(
@@ -95,6 +96,7 @@ export const neoCmd = rootCmd.pipe(
 		removeCmd,
 		dnsCmd,
 		clipboardCmd,
+		daemonCmd,
 		childCmd,
 	]),
 );
