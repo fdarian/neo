@@ -29,6 +29,8 @@ const writeClients = (clients: Array<number>) =>
 	});
 
 export namespace ClientRegistry {
+	export const readAll = readClients;
+
 	export const register = (pid: number) =>
 		Effect.gen(function* () {
 			const clients = yield* readClients;
